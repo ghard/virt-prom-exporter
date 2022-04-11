@@ -1,0 +1,6 @@
+TODO
+****
+
+- Proper cleanup upon uninstall
+- Add filtering of table stats to include to limit size of stats export
+- Provide some kind of a custom stats / hook API

@@ -1,0 +1,25 @@
+* TESTING
+
+  A rudimentary test is implemented.
+
+* REQUIREMENTS
+
+  - A successfully built vad package in ../release/virt-prom-exporter.vad
+  - /bin/sh
+  - Virtuoso and isql binaries in /usr/local/virtuoso-opensource/bin/virtuoso-t
+  - curl at /usr/bin/curl
+  - netstat at /usr/bin/netstat
+  
+  The virtuoso.ini supplied, and the test script assumes default virtuoso ports for SQL (1111) and HTTP (8890), respectively.
+
+  If these ports are already taken, you must edit the appropriate params in virtuoso.ini and override the values for VIRT_PORT
+  and PROM_URI with shell variables.
+
+  Most operating parameters can be overriden with shell variables. Perusing the source code in test.sh should prove illuminating.
+
+* RUNNING
+
+  Check that all requirements are met and exec test.sh
+
+
+  
