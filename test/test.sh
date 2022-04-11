@@ -62,10 +62,10 @@ STOP_SERVER()
 
 INSTALL_VAD()
 {
-    $ISQL $SQL_PORT $UID $DBA EXEC="vad_install('$VAD_PACKAGE',0)"
+    $ISQL $VIRT_PORT $VIRT_UID $VIRT_PWD EXEC="vad_install('$VAD_PACKAGE',0)"
     if [ ! $? -eq 0 ]
     then
-        echo "--- FAILURE VAD install"
+        echo "--- FAILURE VAD install failed"
         return 1
     else
         return 0
