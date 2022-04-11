@@ -16,17 +16,17 @@ create procedure l_stat_format (
   declare ts bigint;
   ts := make_timestamp();
 
-  http (sprintf ('l_stat_locks{key_table="%s", index_name="%s"} %d %ld\n',
+  http (sprintf ('virt_l_stat_locks{key_table="%s", index_name="%s"} %d %ld\n',
                       key_table, index_name, locks, ts));
-  http (sprintf ('l_stat_waits{key_table="%s", index_name="%s"} %d %ld\n',
+  http (sprintf ('virt_l_stat_waits{key_table="%s", index_name="%s"} %d %ld\n',
                       key_table, index_name, waits, ts));
-  http (sprintf ('l_stat_wait_pct{key_table="%s", index_name="%s"} %d %ld\n',
+  http (sprintf ('virt_l_stat_wait_pct{key_table="%s", index_name="%s"} %d %ld\n',
                       key_table, index_name, wait_pct, ts));
-  http (sprintf ('l_stat_deadlocks{key_table="%s", index_name="%s"} %d %ld\n',
+  http (sprintf ('virt_l_stat_deadlocks{key_table="%s", index_name="%s"} %d %ld\n',
                       key_table, index_name, deadlocks, ts));
-  http (sprintf ('l_stat_lock_esc{key_table="%s", index_name="%s"} %d %ld\n',
+  http (sprintf ('virt_l_stat_lock_esc{key_table="%s", index_name="%s"} %d %ld\n',
                       key_table, index_name, lock_esc, ts));
-  http (sprintf ('l_stat_wait_msecs{key_table="%s", index_name="%s"} %d %ld\n',
+  http (sprintf ('virt_l_stat_wait_msecs{key_table="%s", index_name="%s"} %d %ld\n',
                       key_table, index_name, wait_msecs, ts));
 }
 ;
@@ -35,6 +35,14 @@ create procedure l_stat_format (
 
 create procedure
 prom_l_stat_exporter () {
+  http ('# TYPE virt_l_stat_locks counter\n');
+  http ('# TYPE virt_l_stat_waits counter\n');
+  http ('# TYPE virt_l_stat_wait_pct gauge\n');
+  http ('# TYPE virt_l_stat_deadlocks counter\n');
+  http ('# TYPE virt_l_stat_lock_esc counter\n');
+  http ('# TYPE virt_l_stat_wait_msecs counter\n');
+
+
   for (select key_table,
               index_name,
               locks,

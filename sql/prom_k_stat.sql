@@ -33,32 +33,32 @@ create procedure k_stat_format (
   declare ts bigint;
   ts := make_timestamp();
 
-  http (sprintf ('k_stat_landed{key_table="%s", index_name="%s"} %d %ld\n',
+  http (sprintf ('virt_k_stat_landed{key_table="%s", index_name="%s"} %d %ld\n',
                  key_table, index_name, landed, ts));
-  http (sprintf ('k_stat_consec{key_table="%s", index_name="%s"} %d %ld\n',
+  http (sprintf ('virt_k_stat_consec{key_table="%s", index_name="%s"} %d %ld\n',
                  key_table, index_name, consec, ts));
-  http (sprintf ('k_stat_right_edge{key_table="%s", index_name="%s"} %d %ld\n',
+  http (sprintf ('virt_k_stat_right_edge{key_table="%s", index_name="%s"} %d %ld\n',
                  key_table, index_name, right_edge, ts));
-  http (sprintf ('k_stat_read_wait{key_table="%s", index_name="%s"} %d %ld\n',
+  http (sprintf ('virt_k_stat_read_wait{key_table="%s", index_name="%s"} %d %ld\n',
                  key_table, index_name, read_wait, ts));
-  http (sprintf ('k_stat_write_wait{key_table="%s", index_name="%s"} %d %ld\n',
+  http (sprintf ('virt_k_stat_write_wait{key_table="%s", index_name="%s"} %d %ld\n',
                  key_table, index_name, write_wait, ts));
-  http (sprintf ('k_stat_landing_wait{key_table="%s", index_name="%s"} %d %ld\n',
+  http (sprintf ('virt_k_stat_landing_wait{key_table="%s", index_name="%s"} %d %ld\n',
                  key_table, index_name, landing_wait, ts));
-  http (sprintf ('k_stat_pl_wait{key_table="%s", index_name="%s"} %d %ld\n',
+  http (sprintf ('virt_k_stat_pl_wait{key_table="%s", index_name="%s"} %d %ld\n',
                  key_table, index_name, pl_wait, ts));
 }
 ;
 
 create procedure
 prom_k_stat_exporter () {
-  http ('# TYPE k_stat_landed counter\n');
-  http ('# TYPE k_stat_consec counter\n');
-  http ('# TYPE l_stat_right_edge counter\n');
-  http ('# TYPE k_stat_read_wait counter\n');
-  http ('# TYPE k_stat_write_wait counter\n');
-  http ('# TYPE k_stat_landing_wait counter\n');
-  http ('# TYPE k_stat_pl_wait counter\n');
+  http ('# TYPE virt_k_stat_landed counter\n');
+  http ('# TYPE virt_k_stat_consec counter\n');
+  http ('# TYPE virt_k_stat_right_edge counter\n');
+  http ('# TYPE virt_k_stat_read_wait counter\n');
+  http ('# TYPE virt_k_stat_write_wait counter\n');
+  http ('# TYPE virt_k_stat_landing_wait counter\n');
+  http ('# TYPE virt_k_stat_pl_wait counter\n');
 
   for (select key_table,
               index_name,
