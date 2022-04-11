@@ -1,0 +1,9 @@
+virt-prom-exporter
+
+Prometheus reporting endpoint for OpenLink Virtuoso Universal Server
+
+Copyright (C) 2021-2022 Yrjänä Rankka
+ghard@zonk.net
+
+The project can be found at https://github.com/ghard/virt-prom
+

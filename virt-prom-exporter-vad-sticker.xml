@@ -1,0 +1,57 @@
+<?xml version="1.0" encoding="ASCII"?>
+<!DOCTYPE sticker SYSTEM "vad_sticker.dtd">
+<sticker version="0.1" xml:lang="en-UK">
+<caption>
+  <name package="virt-prom-exporter">
+    <prop name="Title" value="virt-prom-exporter"/>
+    <prop name="Developer" value="Yrj&auml;n&auml; Rankka"/>
+    <prop name="Copyright" value="(C) 2021-2022 Yrj&auml;n&auml; Rankka"/>
+    <prop name="Download" value="https://github.com/ghard/virt_prom"/>
+  </name>
+  <version package="$VERSION$">
+    <prop name="Release Date" value="$PACKDATE$"/>
+    <prop name="Build" value="Release"/>
+  </version>
+</caption>
+<dependencies></dependencies>
+<procedures uninstallation="supported">
+  <sql purpose="pre-install">
+    <![CDATA[
+      log_message('virt-prom-exporter procedures pre-install');
+    ]]>
+  </sql>
+  <sql purpose="post-install">
+    <![CDATA[
+      log_message('virt-prom-exporter procedures post-install');
+    ]]>
+  </sql>
+</procedures>
+<ddls>
+  <sql purpose="post-install">
+    <![CDATA[
+	set_qualifier('PROM_EXPORTER');
+	log_message('loading SQL files');
+        user_create ('virt_prom_soap', uuid());
+        DB.DBA.VAD_LOAD_SQL_FILE('$BASE_PATH$/prom_exporter/prom_utils.sql', 0, 'report', $ISDAV$);
+	DB.DBA.VAD_LOAD_SQL_FILE('$BASE_PATH$/prom_exporter/prom_sys_stat.sql', 0, 'report', $ISDAV$);
+	DB.DBA.VAD_LOAD_SQL_FILE('$BASE_PATH$/prom_exporter/prom_l_stat.sql', 0, 'report', $ISDAV$);
+	DB.DBA.VAD_LOAD_SQL_FILE('$BASE_PATH$/prom_exporter/prom_k_stat.sql', 0, 'report', $ISDAV$);
+	DB.DBA.VAD_LOAD_SQL_FILE('$BASE_PATH$/prom_exporter/prom_exporter.sql', 0, 'report', $ISDAV$);
+        DB.DBA.VHOST_DEFINE (lpath=>'/metrics', ppath=>'/SOAP/Http/prom_exporter', soap_user=>'virt_prom_soap');
+        log_message('virt-prom-exporter install: creating user and role');
+    ]]>
+  </sql>
+  <sql purpose='pre-uninstall'>
+    <![CDATA[
+        DB.DBA.VHOST_REMOVE (lpath=>'/metrics');
+        user_role_drop('prom_exporter');
+	user_delete('virt_prom_soap');
+    ]]>
+  </sql>
+</ddls>
+<resources>
+    <file source_uri="sql/*.sql" target_uri="prom_exporter/$f$" />
+</resources>
+<registry>
+</registry>
+</sticker>
