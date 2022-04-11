@@ -26,14 +26,11 @@ CHECK_LISTEN()
 {
     LISTENING=$($NETSTAT -an 2> /dev/null | grep "[\.\:]$VIRT_PORT " | grep LISTEN)
     
-    echo "LISTENING: z$LISTENING"
-    
     if [ "z$LISTENING" = z ]
     then
-        echo "NOT LISTENING"
+        echo "Virtuoso not listening"
         return 1
     else
-        echo "LISTENING"
         return 0
     fi
 }
