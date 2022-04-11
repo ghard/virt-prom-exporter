@@ -4,3 +4,17 @@ INSTALLATION INSTRUCTIONS
 Copyright (C) 2021-2022 Yrjänä Rankka
 ghard@zonk.net
 
+BUILDING
+********
+
+Make sure you have python3 available and run make in the root of this repository. The makefile should pull the required vadpacker
+submodule automatically from GitHub. The built VAD package should appear in ./release directory.
+
+INSTALLING
+**********
+
+Place the built VAD package somewhere Virtuoso has access to and VAD_INSTALL it. For example, if you have the default installation,
+you may copy the VAD package to ./vad in the DB directory, and execute "VAD_INSTALL('./vad/virt-prom-exporter.vad',0);" using isql.
+
+You may also be able to use the Virtuoso Conductor web-based management interface, and upload the package there.
+
