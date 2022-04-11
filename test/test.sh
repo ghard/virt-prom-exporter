@@ -3,8 +3,8 @@
 VIRT_BIN=${VIRT_BIN-/usr/local/virtuoso-opensource/bin/virtuoso-t}
 
 VIRT_PORT=${VIRT_PORT-1111}
-VIRT_UID=dba
-VIRT_PWD=dba
+VIRT_UID=${VIRT_UID-dba}
+VIRT_PWD=${VIRT_PWD-dba}
 
 ISQL=${ISQL-/usr/local/virtuoso-opensource/bin/isql}
 
@@ -12,15 +12,15 @@ REL_DIR=${VIRT_PROM_REL_DIR-../release}
 REL_PACKAGE=$REL_DIR/virt-prom-exporter.vad
 VAD_PACKAGE=./vad/virt-prom-exporter.vad
 
-NETSTAT=/usr/bin/netstat
+NETSTAT=${NETSTAT_PATH-/usr/bin/netstat}
 
 VAD_DIR=${VAD_DIR-./vad}
 DB_DIR=${DB_DIR-./db}
 VAD_DIR_SAFETY=VIRT_PROM_TEST_VAD_DIR
 DB_DIR_SAFETY=VIRT_PROM_TEST_DB_DIR
 
-CURL=curl
-PROM_URI=http://localhost:8890/metrics
+CURL=${CURL_PATH-/usr/bin/curl}
+PROM_URI=${PROM_URI-http://localhost:8890/metrics}
 
 CHECK_LISTEN()
 {
