@@ -57,10 +57,10 @@ STOP_SERVER()
     if [ ! $? -eq 0 ]
     then
         echo "--- FAILURE Could not stop server."
-        exit 1
+        return 1
     fi
     
-    exit 0
+    return 0
 }
 
 INSTALL_VAD()
