@@ -9,8 +9,10 @@ VIRT_PWD=${VIRT_PWD-dba}
 ISQL=${ISQL-/usr/local/virtuoso-opensource/bin/isql}
 
 REL_DIR=${VIRT_PROM_REL_DIR-../release}
-REL_PACKAGE=$REL_DIR/virt-prom-exporter.vad
-VAD_PACKAGE=./vad/virt-prom-exporter.vad
+VAD_PACKAGE_NAME=virt-prom-exporter
+REL_PACKAGE=$REL_DIR/$VAD_PACKAGE_NAME.vad
+VAD_PACKAGE=./vad/$VAD_PACKAGE_NAME.vad
+VAD_PACKAGE_VERSION=1.0
 
 NETSTAT=${NETSTAT_PATH-/usr/bin/netstat}
 
@@ -21,6 +23,9 @@ DB_DIR_SAFETY=VIRT_PROM_TEST_DB_DIR
 
 CURL=${CURL_PATH-/usr/bin/curl}
 PROM_URI=${PROM_URI-http://localhost:8890/metrics}
+
+SUCC_CNT=0
+FAIL_CNT=0
 
 CHECK_LISTEN()
 {
@@ -72,6 +77,18 @@ INSTALL_VAD()
     fi
 }
 
+UNINSTALL_VAD()
+{
+    $ISQL $VIRT_PORT $VIRT_UID $VIRT_PWD EXEC="vad_uninstall('$VAD_PACKAGE_NAME/$VAD_PACKAGE_VERSION')"
+    if [ ! $? -eq 0 ]
+    then
+        echo "--- FAILURE VAD install failed"
+        return 1
+    else
+        return 0
+    fi
+}
+
 NUKE_DIR()
 {
     if [ $# -lt 2 ]
@@ -112,17 +129,29 @@ TEST_EXPORTER()
     if [ $? -eq 0 ]
     then
         echo "+++ SUCCESS metrics received"
-        return 1
+        return 0
     else
         echo "--- FAILURE no metrics received!"
-        return 0
+        return 1
     fi
 }
 
-FINAL_CLEANUP()
+NUKE_TEST_DIRS()
 {
     NUKE_DIR $VAD_DIR $VAD_DIR_SAFETY
     NUKE_DIR $DB_DIR $DB_DIR_SAFETY
+}
+
+COUNT_SUCC_FAIL()
+{
+    if [ $1 -ne 0 ]
+    then
+        FAIL_CNT=$(($FAIL_CNT+1))
+        return 1
+    else
+        SUCC_CNT=$(($SUCC_CNT+1))
+        return 0
+    fi
 }
 
 RUN_TESTS()
@@ -136,22 +165,25 @@ RUN_TESTS()
     then
         echo "Installing VAD package..."
         INSTALL_VAD
+        COUNT_SUCC_FAIL $?
         if [ $? -ne 0 ]
         then
             echo "Cleaning up..."
             STOP_SERVER
-            FINAL_CLEANUP
+            NUKE_TEST_DIRS
             echo "Over and out"
             exit 1
         fi
         echo "Running tests..."
         TEST_EXPORTER
-        result=$?
+        COUNT_SUCC_FAIL $?
         echo "Cleaning up..."
+        UNINSTALL_VAD
+        COUNT_SUCC_FAIL $?
         STOP_SERVER
-        FINAL_CLEANUP
-        echo "Test DONE"
-        if [ $result -eq 1 ]
+        NUKE_TEST_DIRS
+        echo "Test DONE with $SUCC_CNT SUCCESSFUL, $FAIL_CNT FAILED"
+        if [ $FAIL_CNT -eq 0 ]
         then
             exit 0
         else
@@ -159,7 +191,7 @@ RUN_TESTS()
         fi
     else
         echo "--- FAILURE couldn't start server. Cleaning up and exiting."
-        FINAL_CLEANUP
+        NUKE_TEST_DIRS
         exit 1
     fi
 }
