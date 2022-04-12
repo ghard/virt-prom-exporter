@@ -30,10 +30,6 @@ create procedure DB.virt_prom_soap.prom_exporter () __SOAP_HTTP 'text/plain'
 }
 ;
 
-create role prom_exporter;
-grant execute on DB.virt_prom_soap.prom_exporter to prom_exporter;
-grant prom_exporter to virt_prom_soap;
-
 ----
 
 -- this stuff is done by the vad package post-install
