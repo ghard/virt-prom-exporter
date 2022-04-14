@@ -5,7 +5,7 @@ VIRT_BIN=${VIRT_BIN-/usr/local/virtuoso-opensource/bin/virtuoso-t}
 VIRT_PORT=${VIRT_PORT-1111}
 VIRT_UID=${VIRT_UID-dba}
 VIRT_PWD=${VIRT_PWD-dba}
-
+VIRT_HTTP_PORT=${VIRT_HTTP_PORT-8890}
 ISQL=${ISQL-/usr/local/virtuoso-opensource/bin/isql}
 
 REL_DIR=${VIRT_PROM_REL_DIR-../release}
@@ -22,10 +22,12 @@ VAD_DIR_SAFETY=VIRT_PROM_TEST_VAD_DIR
 DB_DIR_SAFETY=VIRT_PROM_TEST_DB_DIR
 
 CURL=${CURL_PATH-/usr/bin/curl}
-PROM_URI=${PROM_URI-http://localhost:8890/metrics}
+PROM_URI=${PROM_URI-http://localhost:$VIRT_HTTP_PORT/metrics}
 
 SUCC_CNT=0
 FAIL_CNT=0
+
+TEST_REPORT_FSPEC=test_report.org
 
 CHECK_LISTEN()
 {
@@ -55,38 +57,16 @@ START_SERVER()
 STOP_SERVER()
 {
     $ISQL $VIRT_PORT $VIRT_UID $VIRT_PWD EXEC="shutdown()"
-    
-    if [ ! $? -eq 0 ]
-    then
-        echo "--- FAILURE Could not stop server."
-        return 1
-    fi
-    
-    return 0
 }
 
 INSTALL_VAD()
 {
     $ISQL $VIRT_PORT $VIRT_UID $VIRT_PWD EXEC="vad_install('$VAD_PACKAGE',0)"
-    if [ ! $? -eq 0 ]
-    then
-        echo "--- FAILURE VAD install failed"
-        return 1
-    else
-        return 0
-    fi
 }
 
 UNINSTALL_VAD()
 {
     $ISQL $VIRT_PORT $VIRT_UID $VIRT_PWD EXEC="vad_uninstall('$VAD_PACKAGE_NAME/$VAD_PACKAGE_VERSION')"
-    if [ ! $? -eq 0 ]
-    then
-        echo "--- FAILURE VAD install failed"
-        return 1
-    else
-        return 0
-    fi
 }
 
 NUKE_DIR()
@@ -128,13 +108,27 @@ TEST_EXPORTER()
     $CURL $PROM_URI 2> /dev/null | grep sys_stat_db_pages > /dev/null
     if [ $? -eq 0 ]
     then
-        echo "+++ SUCCESS metrics received"
+        echo "*** Metrics received."
         return 0
     else
-        echo "--- FAILURE no metrics received!"
+        echo "*** No metrics received!"
         return 1
     fi
 }
+
+TEST_EXPORTER_MISSING()
+{
+    $CURL -I $PROM_URI 2> /dev/null | grep "HTTP/1.1 404" >/dev/null
+    if [ $? -eq 1 ]
+    then
+        echo "*** Whoa! Metrics endpoint is still there!"
+        return 1
+    else
+        echo "*** Metrics are gone. Good."
+        return 0
+    fi
+}
+
 
 NUKE_TEST_DIRS()
 {
@@ -142,16 +136,64 @@ NUKE_TEST_DIRS()
     NUKE_DIR $DB_DIR $DB_DIR_SAFETY
 }
 
+INC_FAIL_CNT()
+{
+    FAIL_CNT=$(($FAIL_CNT+1))
+}
+
+DEC_FAIL_CNT()
+{
+    SUCC_CNT=$(($SUCC_CNT+1))
+}
+
+INIT_TEST_REPORT()
+{
+    >$TEST_REPORT_FSPEC
+    echo "* VIRT_PROM_EXPORTER TEST REPORT" >> $TEST_REPORT_FSPEC
+    echo "" >> $TEST_REPORT_FSPEC
+    echo "Date: $(date +%Y%m%d%H%M%S)" >> $TEST_REPORT_FSPEC
+    echo "Host: $(hostname)" >> $TEST_REPORT_FSPEC
+    echo "" >> $TEST_REPORT_FSPEC
+    echo "| Result  | Test                                         |" >> $TEST_REPORT_FSPEC
+    echo "|---------|----------------------------------------------|" >> $TEST_REPORT_FSPEC
+}
+
+ADD_TEST_REPORT()
+{
+    echo "| $1 | $2 |" >> $TEST_REPORT_FSPEC
+}
+
 COUNT_SUCC_FAIL()
 {
     if [ $1 -ne 0 ]
     then
-        FAIL_CNT=$(($FAIL_CNT+1))
+        echo "--- FAIL $2"
+        ADD_TEST_REPORT "FAIL   " "$2"
+        INC_FAIL_CNT
         return 1
     else
-        SUCC_CNT=$(($SUCC_CNT+1))
+        echo "+++ SUCCESS $2"
+        ADD_TEST_REPORT "SUCCESS" "$2"
+        DEC_FAIL_CNT
         return 0
     fi
+}
+
+REPORT_RESULTS()
+{
+    if [ $FAIL_CNT -gt 0 ]
+    then
+        echo "\n*****************************"
+        echo "*** FAILED TESTS REPORTED ***"
+        echo "*****************************\n"
+    else
+        echo "\n***********************"
+        echo "*** TEST SUCCESSFUL ***"
+        echo "***********************\n"
+    fi
+    
+    echo "\nFINISHED test with $SUCC_CNT SUCCESSFUL, $FAIL_CNT FAILED" >> $TEST_REPORT_FSPEC
+    echo "*** Test report available - see $TEST_REPORT_FSPEC\n"
 }
 
 RUN_TESTS()
@@ -159,30 +201,38 @@ RUN_TESTS()
     NUKE_AND_CREATE_DIR $VAD_DIR $VAD_DIR_SAFETY
     NUKE_AND_CREATE_DIR $DB_DIR $DB_DIR_SAFETY
     cp $REL_PACKAGE $VAD_DIR
-    
-    echo "STARTING TEST at $(date +%Y%m%d%H%M%S)"
-    if START_SERVER
+
+
+    INIT_TEST_REPORT
+    echo "*** STARTING TEST at $(date +%Y%m%d%H%M%S)"
+    echo "*** Starting server..."
+    START_SERVER
+    COUNT_SUCC_FAIL $? "START server"
+    if [ $? -eq 0 ]
     then
-        echo "Installing VAD package..."
+        echo "*** Installing VAD package..."
         INSTALL_VAD
-        COUNT_SUCC_FAIL $?
+        COUNT_SUCC_FAIL $? "VAD install"
         if [ $? -ne 0 ]
         then
-            echo "Cleaning up..."
+            echo "*** Cleaning up..."
             STOP_SERVER
+            COUNT_SUCC_FAIL $? "STOP server"
             NUKE_TEST_DIRS
-            echo "Over and out"
+            REPORT_RESULTS
             exit 1
         fi
-        echo "Running tests..."
+        echo "*** START TEST RUN..."
         TEST_EXPORTER
-        COUNT_SUCC_FAIL $?
-        echo "Cleaning up..."
+        COUNT_SUCC_FAIL $? "Check for metrics availability"
         UNINSTALL_VAD
-        COUNT_SUCC_FAIL $?
+        COUNT_SUCC_FAIL $? "VAD package uninstall"
+        TEST_EXPORTER_MISSING
+        COUNT_SUCC_FAIL $? "Metrics endpoint gone after VAD uninstall"
         STOP_SERVER
+        COUNT_SUCC_FAIL $? "STOP Server"
         NUKE_TEST_DIRS
-        echo "Test DONE with $SUCC_CNT SUCCESSFUL, $FAIL_CNT FAILED"
+        REPORT_RESULTS
         if [ $FAIL_CNT -eq 0 ]
         then
             exit 0
@@ -190,8 +240,11 @@ RUN_TESTS()
             exit 1
         fi
     else
-        echo "--- FAILURE couldn't start server. Cleaning up and exiting."
+        echo "--- FAIL couldn't start server. Cleaning up and exiting."
+        INC_FAIL_CNT
+        ADD_TEST_REPORT FAIL "Start Virtuoso server"
         NUKE_TEST_DIRS
+        REPORT_RESULTS
         exit 1
     fi
 }
