@@ -30,20 +30,4 @@ create procedure DB.virt_prom_soap.prom_exporter () __SOAP_HTTP 'text/plain'
 }
 ;
 
-----
-
--- this stuff is done by the vad package post-install
---
-
-create procedure prom_exporter_init ()
-{
---  user_create ('prometheus', uuid());
-  DB.DBA.VHOST_REMOVE (lpath=>'/metrics');
-
-  DB.DBA.VHOST_DEFINE (lpath=>'/metrics',
-                       ppath=>'/SOAP/Http/prom_exporter',
-                       soap_user=>'virt_prom_soap');
-}
-;
-
 -- EOF
